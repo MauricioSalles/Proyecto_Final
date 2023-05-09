@@ -1,6 +1,5 @@
 import cv2
 import os
-import shutil
 
 dataset = "dataset"
 

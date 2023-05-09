@@ -27,7 +27,7 @@ class App(QWidget):
         self.buttonSearch.clicked.connect(self.openFileSearch)
         self.buttonVideo = QPushButton('Procesar video', self)
         self.buttonVideo.setGeometry(250,20,240,25)
-        self.buttonVideo.clicked.connect(self.procesarVideo)
+        self.buttonVideo.clicked.connect(self.processVideo)
         self.label2 = QLabel('Nombre del video',self)
         self.label2.setGeometry(10,50,200,30)
         self.textbox = QLineEdit(self)
@@ -52,7 +52,7 @@ class App(QWidget):
     
 
     
-    def procesarVideo(self):
+    def processVideo(self):
         newVideo = []
         video_dir = self.videoDir
         if self.videoDir == "":
@@ -63,15 +63,15 @@ class App(QWidget):
         frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.progressBar.setMaximum(frames)
         success,image1 = vidcap.read()
-        iteracion= 0
-        self.progressBar.setValue(iteracion)
+        iter= 0
+        self.progressBar.setValue(iter)
         while success:
-            iteracion=iteracion+1
+            iter=iter+1
             success,image2 = vidcap.read()
             if success:
                 newFrame = self.generateFrame(image1,image2)
                 newVideo.append(newFrame)
-            self.progressBar.setValue(iteracion)
+            self.progressBar.setValue(iter)
             cv2.imwrite("frame.jpg", image1)
             frame = cv2.imread("frame.jpg", cv2.IMREAD_UNCHANGED)
             newVideo.append(frame)
@@ -87,8 +87,6 @@ class App(QWidget):
     def generateFrame(self, frame1, frame2):
         Frame1gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
         Frame2gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-        hsv = np.zeros_like(frame1)
-        hsv[..., 1] = 255
         flow = cv2.calcOpticalFlowFarneback(Frame1gray, Frame2gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
         h, w = flow.shape[:2]
         flow = -flow
