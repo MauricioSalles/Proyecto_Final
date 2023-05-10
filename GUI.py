@@ -68,13 +68,13 @@ class App(QWidget):
         while success:
             iter=iter+1
             success,image2 = vidcap.read()
+            cv2.imwrite("frame.jpg", image1)
+            frame = cv2.imread("frame.jpg", cv2.IMREAD_UNCHANGED)
+            newVideo.append(frame)
             if success:
                 newFrame = self.generateFrame(image1,image2)
                 newVideo.append(newFrame)
             self.progressBar.setValue(iter)
-            cv2.imwrite("frame.jpg", image1)
-            frame = cv2.imread("frame.jpg", cv2.IMREAD_UNCHANGED)
-            newVideo.append(frame)
             image1 = image2
         self.progressBar.setValue(frames)
         height, width, c = newVideo[-1].shape
