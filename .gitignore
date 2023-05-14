@@ -6,3 +6,5 @@
 *.jpg
 *.mp4
 *.pyc
+*.pth
+*/__pycache__

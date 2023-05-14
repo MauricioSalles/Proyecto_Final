@@ -1,7 +1,7 @@
 import os
 import torch.cuda as cuda
 from torch.utils.data import Dataset
-from PIL.Image import open
+from cv2 import imread as open
 
 class FramesDataset(Dataset):
     
