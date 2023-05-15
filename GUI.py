@@ -1,6 +1,11 @@
 import sys
 import cv2
 import numpy as np
+import torch.cuda as cuda
+from torch import load,unsqueeze,cat, no_grad
+import torchvision.transforms as transforms
+from os.path import exists
+from NN_resorces.UNET import UNET
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QPushButton, QLabel, QProgressBar
 from PyQt5.QtGui import QIcon
@@ -18,6 +23,7 @@ class App(QWidget):
         self.main()
         
     def main(self):
+        self.device = "cuda" if cuda.is_available() else "cpu"
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.label = QLabel('video',self)
@@ -35,6 +41,10 @@ class App(QWidget):
         self.progressBar = QProgressBar(self)
         self.progressBar.setMinimum(0)
         self.progressBar.setGeometry(10,120,480,30)
+        self.model = UNET(6,3).to(self.device)
+        if(exists("./NN_resorces/weights.pth")):
+            self.model.load_state_dict(load('./NN_resorces/weights.pth'))
+        self.transform = transforms.ToTensor()
         self.show()
         
     def openFileSearch(self):
@@ -49,8 +59,6 @@ class App(QWidget):
             name = file.split("/")
             self.label.setText(name[-1])
             print(files[0])
-    
-
     
     def processVideo(self):
         newVideo = []
@@ -87,13 +95,24 @@ class App(QWidget):
     def generateFrame(self, frame1, frame2):
         Frame1gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
         Frame2gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-        flow = cv2.calcOpticalFlowFarneback(Frame1gray, Frame2gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        h, w = flow.shape[:2]
-        flow = -flow
-        flow[:,:,0] += np.arange(w)
-        flow[:,:,1] += np.arange(h)[:,np.newaxis]
-        newFrame = cv2.remap(frame1, flow,None, cv2.INTER_LINEAR)
-        cv2.imwrite("newFrame.jpg", newFrame)
+        flow1 = cv2.calcOpticalFlowFarneback(Frame1gray, Frame2gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)/2
+        flow2 = cv2.calcOpticalFlowFarneback(Frame2gray, Frame1gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)/2
+        h, w = flow1.shape[:2]
+        flow1[:,:,0] += np.arange(w)
+        flow1[:,:,1] += np.arange(h)[:,np.newaxis]
+        flow2[:,:,0] += np.arange(w)
+        flow2[:,:,1] += np.arange(h)[:,np.newaxis]
+        frame1Warped = cv2.remap(frame1, flow1,None, cv2.INTER_LINEAR)
+        frame2Warped = cv2.remap(frame2, flow2,None, cv2.INTER_LINEAR)
+        f1w = frame1Warped
+        frame1Warped = self.transform(frame1Warped)
+        frame2Warped = self.transform(frame2Warped)  
+        input = unsqueeze(cat([frame1Warped.to(self.device), frame2Warped.to(self.device)], dim=0),0)
+        with no_grad():
+            output = self.model(input)    
+        newFrame = output.cpu().numpy()[0].transpose(1,2,0)
+        print(newFrame.shape)
+        cv2.imwrite("newFrame.jpg", f1w)
         newFrame = cv2.imread("newFrame.jpg")
         return newFrame
     
