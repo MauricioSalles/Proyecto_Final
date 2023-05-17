@@ -58,7 +58,7 @@ class UNET(nn.Module):
             skip_connection = skip_connections[idx//2]
 
             if x.shape != skip_connection.shape:
-                x = TF.resize(x, size=skip_connection.shape[2:])
+                x = TF.resize(x, size=skip_connection.shape[2:],antialias=True)
             concat_skip = torch.cat((skip_connection, x), dim=1)
             x = checkpoint(self.decoders[idx+1],concat_skip)
         x = self.final_conv(x)

@@ -1,14 +1,18 @@
 import sys
-import cv2
-import numpy as np
-import torch.cuda as cuda
 from torch import load,unsqueeze,cat, no_grad
-import torchvision.transforms as transforms
+from process_video import process_video
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QPushButton, QLabel, QProgressBar
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+import numpy as np
+import cv2
+from torch import load,unsqueeze,cat, no_grad
 from os.path import exists
 from NN_resorces.UNET import UNET
-from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QPushButton, QLabel, QProgressBar
-from PyQt5.QtGui import QIcon
+from NN_resorces.refine_flow import refine_flow
+import torchvision.transforms as transforms
+import torch.cuda as cuda   
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+
 
 class App(QWidget):
 
@@ -45,6 +49,7 @@ class App(QWidget):
         if(exists("./NN_resorces/weights.pth")):
             self.model.load_state_dict(load('./NN_resorces/weights.pth'))
         self.transform = transforms.ToTensor()
+        self.flow = refine_flow()
         self.show()
         
     def openFileSearch(self):
@@ -61,12 +66,24 @@ class App(QWidget):
             print(files[0])
     
     def processVideo(self):
-        newVideo = []
-        video_dir = self.videoDir
         if self.videoDir == "":
             print ("no hay direccion del video")
             return
-        vidcap = cv2.VideoCapture(video_dir)
+        #self.process()
+        self.thread = QThread()
+        self.process_video = process_video(updateBar=self.updateBar, setMaximum=self.progressBar.setMaximum, video_dir=self.videoDir, name=self.textbox.text())
+        #self.process_video.process()
+        self.process_video.moveToThread(self.thread)
+        self.thread.started.connect(self.process_video.process)
+        self.thread.start()
+        print('finish')
+    
+    def updateBar(self,int):
+        self.progressBar.setValue(int)
+        
+    def process(self):    
+        newVideo = []
+        vidcap = cv2.VideoCapture(self.videoDir)
         fps = vidcap.get(cv2.CAP_PROP_FPS)
         frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
         self.progressBar.setMaximum(frames)
@@ -86,17 +103,14 @@ class App(QWidget):
             image1 = image2
         self.progressBar.setValue(frames)
         height, width, c = newVideo[-1].shape
-        video = cv2.VideoWriter(self.textbox.text()+".mp4",cv2.VideoWriter_fourcc(*'DIVX'), fps*2, (width,height))
+        video = cv2.VideoWriter(self.textbox.text()+'.mp4v',cv2.VideoWriter_fourcc(*'DIVX'), fps*2, (width,height))
         for i in range(len(newVideo)):
-             video.write(newVideo[i])
+            video.write(newVideo[i])
         video.release()
-        print('finish')
         
     def generateFrame(self, frame1, frame2):
-        Frame1gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
-        Frame2gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-        flow1 = cv2.calcOpticalFlowFarneback(Frame1gray, Frame2gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)/2
-        flow2 = cv2.calcOpticalFlowFarneback(Frame2gray, Frame1gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)/2
+        flow1 = self.flow.calcFlow(frame1, frame2)/2
+        flow2 = self.flow.calcFlow(frame2, frame1)/2
         h, w = flow1.shape[:2]
         flow1[:,:,0] += np.arange(w)
         flow1[:,:,1] += np.arange(h)[:,np.newaxis]
@@ -110,13 +124,10 @@ class App(QWidget):
         input = unsqueeze(cat([frame1Warped.to(self.device), frame2Warped.to(self.device)], dim=0),0)
         with no_grad():
             output = self.model(input)    
-        newFrame = output.cpu().numpy()[0].transpose(1,2,0)
-        print(newFrame.shape)
+        newFrame = output.cpu().numpy()[0].transpose(1,2,0)*255
         cv2.imwrite("newFrame.jpg", f1w)
         newFrame = cv2.imread("newFrame.jpg")
         return newFrame
-    
-
 
 
 if __name__ == '__main__':
