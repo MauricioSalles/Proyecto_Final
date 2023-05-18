@@ -6,3 +6,4 @@ matplotlib = conda install -c conda-forge matplotlib
 pytorch = conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvidia
 conda install -c conda-forge einops
 conda install -c anaconda scipy
+conda install -c conda-forge tqdm

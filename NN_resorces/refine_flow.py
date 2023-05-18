@@ -1,7 +1,6 @@
 import torch
-import torch.cuda as cuda
 from torch.nn.functional import pad
-from torch import load,unsqueeze,cat, no_grad
+from torch import load,unsqueeze
 import torchvision.transforms as transforms
 import argparse
 import cv2
@@ -9,13 +8,11 @@ import numpy as np
 from torchvision.models.optical_flow import raft_large
 from torchvision.models.optical_flow import Raft_Large_Weights
 from torch.nn import DataParallel
-from torch import load, from_numpy
+from torch import load
 try:
-    from GMA.core.network import RAFTGMA
-    from GMA.core.utils.utils import InputPadder                
+    from GMA.core.network import RAFTGMA             
 except ImportError:
         from .GMA.core.network import RAFTGMA
-        from .GMA.core.utils.utils import InputPadder
 
 
 class refine_flow():

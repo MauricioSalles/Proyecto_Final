@@ -3,12 +3,12 @@ import torch.cuda as cuda
 from torch.utils.data import Dataset
 from cv2 import imread as open
 
-class FramesDataset(Dataset):
+class Dataset_warped(Dataset):
     
     def __init__(self, dir, transform = None):
         self.device = "cuda" if cuda.is_available() else "cpu"
         self.transform = transform
-        self.dir = dir #'C:\Users\Mau\Desktop\proyectos\Proyecto\dataset'
+        self.dir = dir
         self.frames = self.frameList()
         
     def __len__(self):
@@ -60,3 +60,38 @@ class FramesDataset(Dataset):
                     frames.append(((f1,f2), output[idx], directory_frames[idx]))     
         return frames 
     
+class Dataset(Dataset):
+    
+    def __init__(self, dir, transform = None):
+        self.device = "cuda" if cuda.is_available() else "cpu"
+        self.transform = transform
+        self.dir = dir
+        self.frames = self.frameList()
+        
+    def __len__(self):
+        return len(self.frames)
+    
+    def __getitem__(self,index):
+        (frame1,frame2,frame3) =  self.frames[index]
+        frame1 = open(frame1)
+        frame2 = open(frame2)
+        frame3 = open(frame3)
+        if self.transform is None:
+            return (frame1,frame2,frame3) 
+        frame1 = self.transform(frame1)
+        frame2 = self.transform(frame2)
+        frame3 = self.transform(frame3)
+        return (frame1,frame2,frame3) 
+
+    def frameList(self):
+        frames = []
+        for directories in os.listdir(self.dir):
+            images =  os.listdir(self.dir + '\\' + directories)
+            images.sort()
+            for i in range(len(images)-2):
+                img1 = self.dir + '\\' +directories +'\\' + images[i]
+                img2 = self.dir + '\\' +directories +'\\' + images[i+1]
+                img3 =self.dir + '\\' +directories +'\\' +  images[i+2]
+                input = (img1,img2,img3)
+                frames.append(input)  
+        return frames 

@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
-from torch.utils.checkpoint import checkpoint_sequential
 import torchvision.transforms.functional as TF
 try:
     from .convBlock import ConvBlock                  
@@ -38,7 +37,7 @@ class UNET(nn.Module):
             self.decoders.append(ConvBlock(feature*2, feature))
 
         self.middle = ConvBlock(channels[-1], channels[-1]*2)
-        self.final_conv = nn.Conv2d(channels[0], out_channels, kernel_size=1)
+        self.final_conv = ConvBlock(channels[0], out_channels)
 
 
     def forward(self, x):
