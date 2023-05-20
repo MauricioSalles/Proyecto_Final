@@ -1,13 +1,5 @@
 import torch.nn as nn
 from torch import cat
-import torch.utils.checkpoint as checkpoint
-try:
-    from .convBlock import ConvBlock                  
-except ImportError:
-    try:
-        from convBlock import ConvBlock
-    except ImportError:
-        print("no existe modulo")
 
 class Discriminator(nn.Module):
     """The quadratic model"""
