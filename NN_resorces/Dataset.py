@@ -86,12 +86,13 @@ class Dataset(Dataset):
     def frameList(self):
         frames = []
         for directories in os.listdir(self.dir):
-            images =  os.listdir(self.dir + '\\' + directories)
+            images =  os.listdir(self.dir + '/' + directories)
             images.sort()
             for i in range(len(images)-2):
-                img1 = self.dir + '\\' +directories +'\\' + images[i]
-                img2 = self.dir + '\\' +directories +'\\' + images[i+1]
-                img3 =self.dir + '\\' +directories +'\\' +  images[i+2]
+                img1 = self.dir + '/' +directories +'/' + images[i]
+                img2 = self.dir + '/' +directories +'/' + images[i+1]
+                img3 =self.dir + '/' +directories +'/' +  images[i+2]
                 input = (img1,img2,img3)
+                #input = (open(img1),open(img2),open(img3))
                 frames.append(input)  
         return frames 

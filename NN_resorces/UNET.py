@@ -48,18 +48,18 @@ class UNET(nn.Module):
             skip_connections.append(x)
             x = self.pool(x)
 
-        x = checkpoint(self.middle,x)
+        x = self.middle(x)
         skip_connections = skip_connections[::-1]
 
 
         for idx in range(0, len(self.decoders), 2):
-            x = checkpoint(self.decoders[idx],x)
+            x = self.decoders[idx](x)
             skip_connection = skip_connections[idx//2]
 
             if x.shape != skip_connection.shape:
                 x = TF.resize(x, size=skip_connection.shape[2:],antialias=True)
             concat_skip = torch.cat((skip_connection, x), dim=1)
-            x = checkpoint(self.decoders[idx+1],concat_skip)
+            x = self.decoders[idx+1](concat_skip)
         x = self.final_conv(x)
         x = self.activation(x)
 
