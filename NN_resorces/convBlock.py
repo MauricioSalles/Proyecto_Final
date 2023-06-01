@@ -3,9 +3,9 @@ class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(ConvBlock, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=5, padding=2),
+            nn.Conv2d(in_channels, out_channels, kernel_size=7, padding=3),
             nn.Conv2d(out_channels, out_channels, kernel_size=5, padding=2),
-            nn.ReLU6(),
+            nn.LeakyReLU(0.2),
         )
     def forward(self, x):
         return self.conv(x)

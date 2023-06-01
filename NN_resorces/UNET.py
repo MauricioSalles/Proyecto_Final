@@ -19,7 +19,7 @@ class UNET(nn.Module):
         self.encoders = nn.ModuleList()
         self.decoders = nn.ModuleList()
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.activation = nn.Sigmoid()
+        self.activation = nn.Hardsigmoid()
         self.featureExtraction = nn.ModuleList()
         self.featureExtraction.requires_grad = False
         

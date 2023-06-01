@@ -13,7 +13,7 @@ from torchvision.utils import save_image
 torch.backends.cudnn.benchmark = True
 
 BATCH = 3
-NUM_EPOCHS = 10
+NUM_EPOCHS = 5
 LR = 2e-5
 device = "cuda" if cuda.is_available() else "cpu"
 dir_dataset = '/content/drive/MyDrive/Proyecto_Final/Proyecto_Final/dataset2'
