@@ -17,9 +17,9 @@ class process_video(QObject):
         self.setMaximum = setMaximum
         self.device = "cuda" if cuda.is_available() else "cpu"
         self.flow = refine_flow()
-        self.model = UNET(6,3).to(self.device)
-        if(exists("./NN_resorces/weights.pth")):
-            self.model.load_state_dict(load('./NN_resorces/weights.pth'))
+        self.model = UNET(in_channels=6,channels=[64, 128, 256, 512]).to(self.device)
+        if(exists('./weights/gen-conv.pth')):
+            self.model.load_state_dict(load('./weights/gen-conv.pth'))
         self.transform = transforms.ToTensor()
         
         
