@@ -97,7 +97,7 @@ class refine_flow():
             img1 = pad(img1, (padY2,padY,padX,padX2), "constant", 0)
             img3 = pad(img3, (padY2,padY,padX,padX2), "constant", 0)
             with torch.no_grad():
-                flow_low, output = self.flow(img1.to(self.device), img3.to(self.device), iters=20, test_mode=True)
+                output = self.flow(img1.to(self.device), img3.to(self.device), iters=10)[0]
             b,c,w,h = output.shape
             output = output[:,:,padX:w-padX2,padY:h-padY2]
             relativeFlow = np.transpose(output.cpu().numpy()[0], (1,2,0))
