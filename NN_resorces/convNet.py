@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
+from torch.nn.functional import pad
 try:
     from .convBlock import ConvBlock                  
 except ImportError:
@@ -10,31 +11,47 @@ except ImportError:
 
 class convNet(nn.Module):
     """The quadratic model"""
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels=6, out_channels=3, channels=[15, 30, 60, 120]):
         super(convNet, self).__init__()
-        self.conv11 = nn.Conv2d(in_channels, 32, kernel_size=3, padding=1)
-        self.conv12 = ConvBlock(32, 32)
-        self.conv2 = ConvBlock(32, 64)
-        self.middle1 =nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.up2 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
-        self.conv5 = ConvBlock(64, 64)
-        self.up3 = nn.ConvTranspose2d(64, 32, kernel_size=2, stride=2)
-        self.conv6 = ConvBlock(32, 32)
-        self.finalConv = nn.Conv2d(32, out_channels, kernel_size=3, padding=1)
-        self.down = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.channels = channels
+        self.encoders = nn.ModuleList()
+        self.decoders = nn.ModuleList()
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.activation = nn.Sigmoid()
+        self.featureExtraction = nn.ModuleList()
+        self.featureExtraction.requires_grad = False
+        
+        for feature in channels:
+            self.encoders.append(ConvBlock(in_channels, feature))
+            in_channels = feature
+            
+
+        for feature in reversed(channels):
+            self.decoders.append(
+                nn.ConvTranspose2d(
+                    feature*2, feature, kernel_size=2, stride=2,
+                )
+            )
+            self.decoders.append(ConvBlock(feature, feature))
+            
+        self.decoders.append(ConvBlock(channels[0], out_channels))
+
+        self.middle = ConvBlock(channels[-1], channels[-1]*2)
         self.activation = nn.Sigmoid()
 
     def forward(self, x):
-        x = self.conv11(x)
-        x = checkpoint.checkpoint(self.conv12,x)
-        x = self.down(x)
-        x = checkpoint.checkpoint(self.conv2,x)
-        x = self.down(x)
-        x = self.middle1(x)
-        x = self.up2(x)
-        x = checkpoint.checkpoint(self.conv5,x)
-        x = self.up3(x)
-        x = self.conv6(x)
-        x = self.finalConv(x)
+        b,c,w,h = x.shape
+        padY = h%2**(len(self.channels)+1)
+        padX = w%2**(len(self.channels)+1)
+        x = pad(x, (0,padY,0,padX), "constant", 1)
+        for encoder in self.encoders:
+            x = encoder(x)
+            x = self.pool(x)
+
+        x = self.middle(x)
+        
+        for decoder in self.decoders:
+            x = decoder(x)
         x = self.activation(x)
+        x = x[:,:,:w,:h]
         return x
