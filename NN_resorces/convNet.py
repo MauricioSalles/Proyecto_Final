@@ -1,5 +1,5 @@
 import torch.nn as nn
-import torch.utils.checkpoint as checkpoint
+from torch.utils.checkpoint import checkpoint
 from torch.nn.functional import pad
 try:
     from .convBlock import ConvBlock                  
@@ -18,40 +18,40 @@ class convNet(nn.Module):
         self.decoders = nn.ModuleList()
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.activation = nn.Sigmoid()
-        self.featureExtraction = nn.ModuleList()
-        self.featureExtraction.requires_grad = False
         
         for feature in channels:
-            self.encoders.append(ConvBlock(in_channels, feature))
+            self.encoders.append(ConvBlock(in_channels, feature,batch_norm=True,dropout=0.2))
             in_channels = feature
             
+        self.middle = ConvBlock(channels[-1], channels[-1]*2,dropout=0.2)
 
         for feature in reversed(channels):
+
             self.decoders.append(
                 nn.ConvTranspose2d(
-                    feature*2, feature, kernel_size=2, stride=2,
+                    feature*2, feature, kernel_size=2, stride=2
                 )
             )
-            self.decoders.append(ConvBlock(feature, feature))
+            self.decoders.append(ConvBlock(feature, feature,dropout=0.2))
             
-        self.decoders.append(ConvBlock(channels[0], out_channels))
-
-        self.middle = ConvBlock(channels[-1], channels[-1]*2)
-        self.activation = nn.Sigmoid()
+        self.decoders.append(ConvBlock(channels[0], out_channels,activation='sigmoid'))
 
     def forward(self, x):
-        b,c,w,h = x.shape
-        padY = h%2**(len(self.channels)+1)
-        padX = w%2**(len(self.channels)+1)
-        x = pad(x, (0,padY,0,padX), "constant", 1)
+        dimension = []
         for encoder in self.encoders:
             x = encoder(x)
+            b,c,w,h = x.shape
+            dimension.append((w,h))
+            padY = h%2
+            padX = w%2
+            
+            x = pad(x, (0,padY,0,padX), "constant",value=0)
             x = self.pool(x)
-
         x = self.middle(x)
-        
-        for decoder in self.decoders:
-            x = decoder(x)
-        x = self.activation(x)
-        x = x[:,:,:w,:h]
+        dimension = dimension[::-1]
+        for idx, decoder in enumerate(self.decoders):
+                x = decoder(x)
+                if idx%2 == 0 and idx//2<(len(dimension)):
+                    w,h = dimension[idx//2]
+                    x = x[:,:,:w,:h]
         return x
