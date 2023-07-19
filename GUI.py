@@ -5,7 +5,7 @@ import torch.cuda as cuda
 from torch import load,unsqueeze,cat, no_grad
 import torchvision.transforms as transforms
 from os.path import exists
-from NN_resorces.UNET import UNET
+from NN_resorces.convNet import convNet
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QPushButton, QLabel, QProgressBar
 from PyQt5.QtGui import QIcon
@@ -41,9 +41,10 @@ class App(QWidget):
         self.progressBar = QProgressBar(self)
         self.progressBar.setMinimum(0)
         self.progressBar.setGeometry(10,120,480,30)
-        self.model = UNET(6,3).to(self.device)
+        self.model = convNet().to(self.device)
         if(exists("./NN_resorces/weights.pth")):
             self.model.load_state_dict(load('./NN_resorces/weights.pth'))
+            self.model.eval()
         self.transform = transforms.ToTensor()
         self.show()
         
@@ -107,9 +108,8 @@ class App(QWidget):
         f1w = frame1Warped
         frame1Warped = self.transform(frame1Warped)
         frame2Warped = self.transform(frame2Warped)  
-        input = unsqueeze(cat([frame1Warped.to(self.device), frame2Warped.to(self.device)], dim=0),0)
         with no_grad():
-            output = self.model(input)    
+            output = self.model(frame1Warped.to(self.device), frame2Warped.to(self.device))    
         newFrame = output.cpu().numpy()[0].transpose(1,2,0)
         print(newFrame.shape)
         cv2.imwrite("newFrame.jpg", f1w)
