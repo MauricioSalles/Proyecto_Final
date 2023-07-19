@@ -5,6 +5,8 @@
 /test_2k_540p
 *.jpg
 *.mp4
+*.mp4v
 *.pyc
 *.pth
 /runs
+*/__pycache__
