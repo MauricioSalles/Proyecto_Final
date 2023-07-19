@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch import cat
 from torch.utils.checkpoint import checkpoint
 from torch.utils.checkpoint import checkpoint_sequential
 import torchvision.transforms.functional as TF
@@ -41,7 +42,8 @@ class UNET(nn.Module):
         self.final_conv = nn.Conv2d(channels[0], out_channels, kernel_size=1)
 
 
-    def forward(self, x):
+    def forward(self, x1,x2):
+        x = cat([x1,x2],dim=1)
         skip_connections = []
 
         for encoder in self.encoders:

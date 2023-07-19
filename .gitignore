@@ -8,4 +8,5 @@
 *.mp4v
 *.pyc
 *.pth
+/runs
 */__pycache__
