@@ -2,8 +2,8 @@ import numpy as np
 import cv2
 from torch import load,unsqueeze,cat, no_grad
 from os.path import exists
-from NN_resorces.UNET import UNET
-from NN_resorces.refine_flow import refine_flow
+from NN_resorces.convNet import convNet
+from NN_resorces.refine_flow import FlowModule
 import torchvision.transforms as transforms
 import torch.cuda as cuda   
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
@@ -16,10 +16,11 @@ class process_video(QObject):
         self.updateBar = updateBar  
         self.setMaximum = setMaximum
         self.device = "cuda" if cuda.is_available() else "cpu"
-        self.flow = refine_flow()
-        self.model = UNET(6,3).to(self.device)
-        if(exists("./NN_resorces/weights.pth")):
-            self.model.load_state_dict(load('./NN_resorces/weights.pth'))
+        self.flow = FlowModule()
+        self.model = convNet(channels=[32,64,128,256]).to(self.device)
+        if(exists('./weights/convNet2e-5.pth')):
+            self.model.load_state_dict(load('./weights/convNet2e-5.pth'))
+            self.model.eval()
         self.transform = transforms.ToTensor()
         
         
@@ -53,8 +54,7 @@ class process_video(QObject):
         video.release()
         
     def generateFrame(self, frame1, frame2):
-        flow1 = self.flow.calcFlow(frame1, frame2)
-        flow2 = self.flow.calcFlow(frame2, frame1)
+        flow1,flow2 = self.flow.getFlow(frame1, frame2)
         h, w = flow1.shape[:2]
         flow1[:,:,0] += np.arange(w)
         flow1[:,:,1] += np.arange(h)[:,np.newaxis]
@@ -62,12 +62,11 @@ class process_video(QObject):
         flow2[:,:,1] += np.arange(h)[:,np.newaxis]
         frame1Warped = cv2.remap(frame1, flow1,None, cv2.INTER_LINEAR)
         frame2Warped = cv2.remap(frame2, flow2,None, cv2.INTER_LINEAR)
-        f1w = frame1Warped
-        frame1Warped = self.transform(frame1Warped)
-        frame2Warped = self.transform(frame2Warped)  
-        input = unsqueeze(cat([frame1Warped.to(self.device), frame2Warped.to(self.device)], dim=0),0)
+        frame1Warped = unsqueeze(self.transform(frame1Warped),dim=0)
+        frame2Warped = unsqueeze(self.transform(frame2Warped),dim=0)
+        print(frame1Warped.shape)
         with no_grad():
-            output = self.model(input)    
+            output = self.model(frame1Warped.to(self.device), frame2Warped.to(self.device))    
         newFrame = output.cpu().numpy()[0].transpose(1,2,0)*255
         cv2.imwrite("newFrame.jpg", newFrame)
         newFrame = cv2.imread("newFrame.jpg")

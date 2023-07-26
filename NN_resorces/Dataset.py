@@ -8,8 +8,10 @@ class FramesDataset(Dataset):
     def __init__(self, dir, transform = None):
         self.device = "cuda" if cuda.is_available() else "cpu"
         self.transform = transform
-        self.dir = dir #'C:\Users\Mau\Desktop\proyectos\Proyecto\dataset'
+        self.dir = dir #r'C:\Users\Mau\Desktop\proyectos\Proyecto\dataset'
+        self.slash = '\\'
         self.frames = self.frameList()
+        #esto debido a que al entrenar en google colab se rrequiere otro tipo de slash
         
     def __len__(self):
         return len(self.frames)
@@ -32,22 +34,22 @@ class FramesDataset(Dataset):
             F1frames = []
             F2frames = []
             output = []
-            images =  os.listdir(self.dir + '\\' + directories)
+            images =  os.listdir(self.dir + self.slash + directories)
             images.sort()
             for i in range(len(images)-3):
-                img2 = self.dir + '\\' +directories +'\\' + images[i+1]
+                img2 = self.dir + self.slash +directories +self.slash + images[i+1]
                 output.append(img2)
             
-            if not os.path.exists(self.dir + '\\' +directories + '\\'+ "warped"):
+            if not os.path.exists(self.dir + self.slash +directories + self.slash+ "warped"):
                 print("directory doesnt exists")
             else:
-                F1frames = os.listdir(self.dir + '\\' +directories + '\\'+"warped"+ '\\'  + "f1")                
-                F2frames = os.listdir(self.dir + '\\' +directories + '\\'+"warped"+ '\\'  + "f2")     
+                F1frames = os.listdir(self.dir + self.slash +directories + self.slash+"warped"+ self.slash  + "f1")                
+                F2frames = os.listdir(self.dir + self.slash +directories + self.slash+"warped"+ self.slash  + "f2")     
                 for idx in range(len(F1frames)):
                     f1 = F1frames[idx]
                     f2 = F2frames[idx]
-                    f1 = self.dir + '\\'+directories + '\\' +"warped"+ '\\' + "f1\\"+f1
-                    f2 = self.dir + '\\'+directories + '\\' +"warped"+ '\\' + "f2\\"+f2 
+                    f1 = self.dir + self.slash+directories + self.slash +"warped"+ self.slash + "f1\\"+f1
+                    f2 = self.dir + self.slash+directories + self.slash +"warped"+ self.slash + "f2\\"+f2 
                     frames.append((f1,output[idx],f2))     
         return frames 
     
