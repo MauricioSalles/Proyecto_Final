@@ -8,10 +8,9 @@ class FramesDataset(Dataset):
     def __init__(self, dir, transform = None):
         self.device = "cuda" if cuda.is_available() else "cpu"
         self.transform = transform
-        self.dir = dir #r'C:\Users\Mau\Desktop\proyectos\Proyecto\dataset'
+        self.dir = dir
         self.slash = '\\'
         self.frames = self.frameList()
-        #esto debido a que al entrenar en google colab se rrequiere otro tipo de slash
         
     def __len__(self):
         return len(self.frames)
@@ -53,3 +52,32 @@ class FramesDataset(Dataset):
                     frames.append((f1,output[idx],f2))     
         return frames 
     
+class FramesDatasetBase(Dataset):
+    
+    def __init__(self, dir):
+        self.dir = dir
+        self.slash = '\\'
+        self.frames = self.frameList()
+        
+    def __len__(self):
+        return len(self.frames)
+    
+    def __getitem__(self,index):
+        (frame1,frame2,frame3) =  self.frames[index]
+        frame1 = open(frame1)
+        frame2 = open(frame2)
+        frame3 = open(frame3)
+        return (frame1,frame2,frame3)
+
+
+    def frameList(self):
+        frames = []
+        for directories in os.listdir(self.dir):
+            images =  os.listdir(self.dir + self.slash + directories)
+            images.sort()
+            for i in range(len(images)-3):
+                img1 = self.dir + self.slash +directories +self.slash + images[i]
+                img2 = self.dir + self.slash +directories +self.slash + images[i+1]
+                img3 = self.dir + self.slash +directories +self.slash + images[i+2]
+                frames.append((img1,img2,img3)) 
+        return frames 

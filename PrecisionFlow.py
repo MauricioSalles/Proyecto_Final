@@ -3,7 +3,7 @@ import numpy as np
 import NN_resorces.Dataset as dt
 from NN_resorces.refine_flow import FlowModule
 
-dataset = dt.FramesDataset('dataset')
+dataset = dt.FramesDatasetBase('dataset')
 len = dataset.__len__()
 flow = FlowModule()
 totalError = 0
@@ -25,19 +25,19 @@ def calcFrame(frame1 , frame2,flow,segmentType,levels):
 
 for i in range(100):
     print(i)
-    f1, f2, f3 = dataset.__getitem__(i)
+    f1, f2, f3 = dataset.__getitem__(99)
     fNewNormal = calcFrame(f1,f3,flow,segmentType='none',levels=1)
     fNewCluster = calcFrame(f1,f3,flow,segmentType='cluster',levels=1)
     fNewSector = calcFrame(f1,f3,flow,segmentType='sector',levels=1)
     fNewRefine = calcFrame(f1,f3,flow,segmentType='none',levels=2)
     fNewRefineSector = calcFrame(f1,f3,flow,segmentType='sector',levels=2)
-    totalError = np.str_(np.abs(fNewNormal-f2).mean())
-    totalErrorCluster = np.str_(np.abs(fNewCluster-f2).mean())
-    totalErrorSector = np.str_(np.abs(fNewSector-f2).mean())
-    totalErrorRefine = np.str_(np.abs(fNewRefine-f2).mean())
-    totalErrorRefineSector = np.str_(np.abs(fNewRefineSector-f2).mean())
-print("error original:  "+ totalError/len)
-print("error de metodo de cluster:  "+totalErrorCluster/len)
-print("error de metodo de sectores:  "+totalErrorSector/len)
-print("error de metodo de refinado:  "+totalErrorRefine/len)
-print("error de metodo de refinado y sectores:  "+totalErrorRefineSector/len)
+    totalError = np.str_(np.abs(fNewNormal-f2).mean()/len)
+    totalErrorCluster = np.str_(np.abs(fNewCluster-f2).mean()/len)
+    totalErrorSector = np.str_(np.abs(fNewSector-f2).mean()/len)
+    totalErrorRefine = np.str_(np.abs(fNewRefine-f2).mean()/len)
+    totalErrorRefineSector = np.str_(np.abs(fNewRefineSector-f2).mean()/len)
+print("error original:  "+ totalError)  
+print("error de metodo de cluster:  "+totalErrorCluster)
+print("error de metodo de sectores:  "+totalErrorSector)
+print("error de metodo de refinado:  "+totalErrorRefine)
+print("error de metodo de refinado y sectores:  "+totalErrorRefineSector)

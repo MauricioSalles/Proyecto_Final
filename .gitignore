@@ -3,6 +3,7 @@
 /dataset2
 /frames
 /test_2k_540p
+*.ipynb
 *.jpg
 *.mp4
 *.mp4v

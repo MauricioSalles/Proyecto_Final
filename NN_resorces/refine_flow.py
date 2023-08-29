@@ -41,7 +41,7 @@ class FlowModule():
                 segment_list2[idx2-1][ht][wt][2]=r2*64
         return segment_list1,segment_list2
     
-    def segmentCluster(self, image1, image2,  K = 6):
+    def segmentCluster(self, image1, image2,  K = 16):
         #segment image by color clusters
         twoDimage = image1.reshape((-1,3))
         twoDimage2 = image2.reshape((-1,3))
@@ -64,7 +64,8 @@ class FlowModule():
         for i in range(K):
             mask = cv2.inRange(labels, i, i)
             mask = np.dstack([mask]*3)
-            segment = cv2.bitwise_and(res, mask)
+            #segment = cv2.bitwise_and(res, mask)
+            segment = 255*mask
             segments.append(segment)
         return segments
     
