@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torch import cat
 from torch.utils.checkpoint import checkpoint
 import torchvision.transforms.functional as TF
 try:
@@ -40,7 +41,8 @@ class UNET(nn.Module):
         self.final_conv = ConvBlock(channels[0], out_channels)
 
 
-    def forward(self, x):
+    def forward(self, x1,x2):
+        x = cat([x1,x2],dim=1)
         skip_connections = []
 
         for encoder in self.encoders:
