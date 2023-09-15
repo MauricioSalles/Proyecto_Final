@@ -88,7 +88,7 @@ class Dataset(Dataset):
         for directories in os.listdir(self.dir):
             images =  os.listdir(self.dir + '/' + directories)
             images.sort()
-            for i in range(len(images)-2):
+            for i in range(len(images)-3):
                 img1 = self.dir + '/' +directories +'/' + images[i]
                 img2 = self.dir + '/' +directories +'/' + images[i+1]
                 img3 =self.dir + '/' +directories +'/' +  images[i+2]

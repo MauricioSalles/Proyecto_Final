@@ -9,3 +9,4 @@
 *.pyc
 *.pth
 */__pycache__
+/runs
