@@ -60,6 +60,10 @@ class App(QWidget):
         self.process_video = process_video(updateBar=self.updateBar, setMaximum=self.progressBar.setMaximum, video_dir=self.videoDir, name=self.textbox.text())
         self.process_video.moveToThread(self.thread)
         self.thread.started.connect(self.process_video.process)
+        self.process_video.progress.connect(self.updateBar)
+        self.process_video.finished.connect(self.thread.quit)
+        self.process_video.finished.connect(self.process_video.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
         self.thread.start()
         print('finish')
     
