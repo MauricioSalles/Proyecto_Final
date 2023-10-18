@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import CustonLossesUflow as uLoss
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
-from Dataset import FramesDataset
+from Dataset import Dataset
 from FlowNet import FlowNet, coords_grid
 from torch.utils.tensorboard import SummaryWriter
 
@@ -50,7 +50,7 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
     writer = SummaryWriter(RUNID)
     device = "cuda" if cuda.is_available() else "cpu"
     dir_dataset = r'C:\Users\Mau\Desktop\proyectos\refineCNN\dataset'
-    dataset = FramesDataset(dir = dir_dataset, transform=transforms.ToTensor())
+    dataset = Dataset(dir = dir_dataset, transform=transforms.ToTensor())
     optimizer = optim.Adam(model.parameters(), lr=LR)
     trainset, testset = random_split(dataset,[0.9,0.1])
     trainset = DataLoader(trainset, batch_size=BATCH, shuffle=True, pin_memory=True,num_workers=1)
@@ -68,7 +68,6 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
                 backFlowsTeacher = model(F3.to(device), F1.to(device),iter)
                 backFlowsStudent = model(F1augmented, F3augmented,iter)
             FlowsStudent= model(F1augmented, F3augmented,iter)
-            print(F1augmented.shape,FlowsStudent[0].shape)
             N, C, H, W = F1augmented.shape
             coords = coords_grid(N, H, W, device=device)
             for id,flow in enumerate(FlowsStudent):
@@ -84,11 +83,11 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
             optimizer.zero_grad()
             step += 1
             running_loss += scalarLoss 
-            if (step)%1==0:
+            if (step)%50==0:
                 N, C, H, W = F1.shape
                 coords = coords_grid(N, H, W, device=device)
                 with torch.no_grad():
-                    flow, warp = model(F1.to(device), F3.to(device),iter,False)
+                    flow = model(F1.to(device), F3.to(device),iter,False)
                 coords = coords + flow
                 output = warping(coords,F1.to(device))
                 obj_grid = torchvision.utils.make_grid(F2)
@@ -103,8 +102,8 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
 
 if __name__ == '__main__':
 
-    LR_LIST = [2e-3]
-    EPOCH = [15]
+    LR_LIST = [2e-4,2e-5]
+    EPOCH = [5,5]
     step = 0
     model = FlowNet().to("cuda" if cuda.is_available() else "cpu")
     RUNID = f'runs/FlowNetS'

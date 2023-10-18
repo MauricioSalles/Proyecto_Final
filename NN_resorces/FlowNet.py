@@ -64,12 +64,12 @@ class FlowNet(nn.Module):
         flows = []
         x1 = 2 * (x1 / 255.0) - 1.0
         x2 = 2 * (x2 / 255.0) - 1.0
-        if W%16 != 0:
-            x1=nn.functional.pad(x1, (W%16,0), mode='constant', value=0)
-            x2=nn.functional.pad(x2, (W%16,0), mode='constant', value=0)
-        if H%16 != 0:
-            x1=nn.functional.pad(x1, (0,0,H%16,0), mode='constant', value=0)
-            x2=nn.functional.pad(x2, (0,0,H%16,0), mode='constant', value=0)
+        if W%32 != 0:
+            x1=nn.functional.pad(x1, (W%32,0), mode='constant', value=0)
+            x2=nn.functional.pad(x2, (W%32,0), mode='constant', value=0)
+        if H%32 != 0:
+            x1=nn.functional.pad(x1, (0,0,H%32,0), mode='constant', value=0)
+            x2=nn.functional.pad(x2, (0,0,H%32,0), mode='constant', value=0)
         hOrigin = H
         wOrigin = W
         N, C, H, W = x1.shape

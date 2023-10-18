@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import CustomLossesBC as cLoss
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
-from Dataset import FramesDataset
+from Dataset import Dataset
 from FlowNet import FlowNet, coords_grid
 from torch.utils.tensorboard import SummaryWriter
 
@@ -38,35 +38,39 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
     writer = SummaryWriter(RUNID)
     device = "cuda" if cuda.is_available() else "cpu"
     dir_dataset = r'C:\Users\Mau\Desktop\proyectos\refineCNN\dataset'
-    dataset = FramesDataset(dir = dir_dataset, transform=transforms.ToTensor())
+    dataset = Dataset(dir = dir_dataset, transform=transforms.ToTensor())
     optimizer = optim.Adam(model.parameters(), lr=LR)
     trainset, testset = random_split(dataset,[0.9,0.1])
     trainset = DataLoader(trainset, batch_size=BATCH, shuffle=True, pin_memory=True,num_workers=1)
     testset = DataLoader(testset, batch_size=1, shuffle=True) 
-    
+    scaler = torch.cuda.amp.GradScaler()
     for epoch in range(EPOCHS):
         for data in trainset:
             (F1,F2,F3) = data
             warps = []
             N, C, H, W = F1.shape
-            coords = coords_grid(N, H, W, device=device)
-            outputs = model(F1.to(device), F3.to(device),iter)
-            for output in outputs:
-                warpCoords = coords + output
-                warps.append(warping(warpCoords,F1.to(device)))
-            loss = cLoss.unsup_loss(outputs, warps, F3.to(device))
+            with torch.cuda.amp.autocast():
+                coords = coords_grid(N, H, W, device=device)
+                outputs = model(F1.to(device), F3.to(device),iter)
+                for output in outputs:
+                    warpCoords = coords + output
+                    warps.append(warping(warpCoords,F1.to(device)))
+                loss = cLoss.unsup_loss(outputs, warps, F3.to(device))
             scalarLoss = loss.item()
-            model.zero_grad()
-            loss.backward()
-            optimizer.step()
             optimizer.zero_grad()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            #loss.backward()
+            #optimizer.step()
+            #optimizer.zero_grad()
             step += 1
             running_loss += scalarLoss 
             if (step)%50==0:
                 N, C, H, W = F1.shape
                 coords = coords_grid(N, H, W, device=device)
                 with torch.no_grad():
-                    flow, warp = model(F1.to(device), F3.to(device),iter,False)
+                    flow = model(F1.to(device), F3.to(device),iter,False)
                 coords = coords + flow*0.5
                 output = warping(coords,F1.to(device))
                 obj_grid = torchvision.utils.make_grid(F2)
@@ -82,7 +86,7 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
 if __name__ == '__main__':
 
     LR_LIST = [2e-4,2e-5]
-    EPOCH = [15,15]
+    EPOCH = [5,5]
     step = 0
     model = FlowNet().to("cuda" if cuda.is_available() else "cpu")
     RUNID = f'runs/FlowNetBC'

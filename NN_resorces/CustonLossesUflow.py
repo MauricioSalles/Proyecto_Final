@@ -13,8 +13,8 @@ def second_order_smoothness_loss(image, flow,edge_weighting_fn):
   flow_gx, flow_gy = image_grads(flow)
   flow_gxx, _ = image_grads(flow_gx)
   _, flow_gyy = image_grads(flow_gy)
-  return ((torch.mean(input=weights_xx * robust_l1(flow_gxx),dim=1, keepdim=True) +
-           torch.mean(input=weights_yy * robust_l1(flow_gyy),dim=1, keepdim=True)) / 2.)
+  return ((torch.mean(input=weights_xx * robust_l1(flow_gxx)) +
+           torch.mean(input=weights_yy * robust_l1(flow_gyy))) / 2.)
 
 
 def image_grads(image_batch, stride=1):
@@ -55,7 +55,7 @@ def census_loss(image_a_bhw3,
   padded_mask_bhw3 = zero_mask_border(mask_bhw3, patch_size)
   diff = torch.pow((torch.abs(hamming_bhw1) + eps), q)
   diff *= padded_mask_bhw3
-  diff_sum = torch.sum(input=diff,dim=1,keepdim=True)
+  diff_sum = torch.sum(input=diff)
   loss_mean = diff_sum / (torch.mean(torch.sum(
       input=padded_mask_bhw3.detach() + 1e-6)))
   return loss_mean
@@ -158,13 +158,13 @@ def unsupLoss(Frame1,Frame3,Warp,Flow12,Flow21,Flow12T,Flow21T):
       image=Frame1,
       flow=Flow12,
       edge_weighting_fn=edge_weighting_fn)
-  losses += smooth_loss_2nd
+  losses += smooth_loss_2nd * 4
   
   selfsup_loss = self_supervision_loss(
       teacher_flow=Flow12,
       student_flow=Flow12T,
       teacher_backward_flow=Flow21,
       student_backward_flow=Flow21T)
-  losses += selfsup_loss 
+  losses += selfsup_loss * 0.3
   
-  return torch.sum(losses)
+  return losses
