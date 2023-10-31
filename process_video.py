@@ -27,6 +27,9 @@ class process_video(QObject):
         #if(exists('./weights/convNet2e-5.pth')):
         #    self.model.load_state_dict(load('./weights/convNet2e-5.pth'))
         #    self.model.eval()
+        if(exists('./weights/FlowNet.pth')):
+            self.flow.load_state_dict(load('./weights/FlowNet.pth'))
+            self.flow.eval()
         self.transform = transforms.ToTensor()
         
         

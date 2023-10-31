@@ -1,9 +1,11 @@
 import cv2
 import numpy as np
 import NN_resorces.Dataset as dt
+import torch
+import torchvision.transforms as transforms
 from NN_resorces.refine_flow import FlowModule
-
-dataset = dt.FramesDatasetBase('dataset')
+from NN_resorces.FlowNet import FlowNet
+dataset = dt.Dataset('dataset')
 len = dataset.__len__()
 flow = FlowModule()
 totalError = 0
@@ -11,33 +13,49 @@ totalErrorCluster = 0
 totalErrorSector = 0
 totalErrorRefine = 0
 
-def calcFrame(frame1 , frame2,flow,segmentType,levels):
-    hsv = np.zeros_like(frame1)
-    hsv[..., 1] = 255
-    flow,flow2 = flow.getFlow(frame1, frame2,segmentType=segmentType,levels=levels)
-    h, w = flow.shape[:2]
-    flow = -flow
-    flow[:,:,0] += np.arange(w)
-    flow[:,:,1] += np.arange(h)[:,np.newaxis]
-    newFrame = cv2.remap(frame1, flow,None, cv2.INTER_LINEAR)
-    return newFrame
+def coords_grid(batch, ht, wd, device):
+        coords = torch.meshgrid(torch.arange(ht, device=device), torch.arange(wd, device=device))
+        coords = torch.stack(coords[::-1], dim=0).float()
+        return coords[None].repeat(batch, 1, 1, 1)
+
+def warping(coords, img):
+    N, C, H, W = img.shape
+    coords = coords.permute(0, 2, 3, 1)
+    xgrid, ygrid = coords.split([1,1], dim=3)
+    xgrid = 2*xgrid/(W-1) - 1
+    ygrid = 2*ygrid/(H-1) - 1
+    grid = torch.cat([xgrid, ygrid], dim=-1)
+    output = torch.nn.functional.grid_sample(img, grid, align_corners=True)
+    return output
+
+def calcFrame(frame1 , frame2,weight):
+    flow = FlowNet().to('cuda')
+    flow.load_state_dict(torch.load(weight))
+    flow.eval()
+    transform = transforms.ToTensor()
+    F1=torch.unsqueeze(transform(frame1).to('cuda'), dim=0)
+    F3=torch.unsqueeze(transform(frame2).to('cuda'), dim=0)
+    N, C, H, W = F1.shape
+    coords = coords_grid(N, H, W, device='cuda')
+    with torch.no_grad():
+        flow = flow(F1.to('cuda'), F3.to('cuda'),5,False)
+    coords = coords + flow
+    output = warping(coords,F1.to('cuda'))
+
+    return output
 
 
 for i in range(100):
     print(i)
-    f1, f2, f3 = dataset.__getitem__(99)
-    fNewNormal = calcFrame(f1,f3,flow,segmentType='none',levels=1)
-    fNewCluster = calcFrame(f1,f3,flow,segmentType='cluster',levels=1)
-    fNewSector = calcFrame(f1,f3,flow,segmentType='sector',levels=1)
-    fNewRefine = calcFrame(f1,f3,flow,segmentType='none',levels=2)
-    fNewRefineSector = calcFrame(f1,f3,flow,segmentType='sector',levels=2)
-    totalError = np.str_(np.abs(fNewNormal-f2).mean()/len)
-    totalErrorCluster = np.str_(np.abs(fNewCluster-f2).mean()/len)
-    totalErrorSector = np.str_(np.abs(fNewSector-f2).mean()/len)
-    totalErrorRefine = np.str_(np.abs(fNewRefine-f2).mean()/len)
-    totalErrorRefineSector = np.str_(np.abs(fNewRefineSector-f2).mean()/len)
-print("error original:  "+ totalError)  
-print("error de metodo de cluster:  "+totalErrorCluster)
-print("error de metodo de sectores:  "+totalErrorSector)
-print("error de metodo de refinado:  "+totalErrorRefine)
-print("error de metodo de refinado y sectores:  "+totalErrorRefineSector)
+    transform = transforms.ToTensor()
+    f1, f2, f3 = dataset.__getitem__(i)
+    F3=torch.unsqueeze(transform(f3).to('cuda'), dim=0)
+    F1=torch.unsqueeze(transform(f1).to('cuda'), dim=0)
+    FlowNetBC = calcFrame(f1,f3,'./weights/FlowNetBC.pth')
+    FlowNetUFlow = calcFrame(f1,f3,'./weights/FlowNetUFlow.pth')
+    FlowNetBCError = np.str_(torch.abs(torch.mean(FlowNetBC-F3)*255))
+    FlowNetUFlowError = np.str_(torch.abs(torch.mean(FlowNetUFlow-F3)*255))
+    error = np.str_(torch.abs(torch.mean(F1-F3)*255))
+print("error FlowNetBC:  "+ FlowNetBCError)  
+print("error FlowNetUFlow:  "+ FlowNetUFlowError)  
+print("error :  "+ error)  
