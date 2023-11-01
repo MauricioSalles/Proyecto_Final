@@ -95,16 +95,14 @@ class App(QWidget):
     def generateFrame(self, frame1, frame2):
         flow1 = self.flow.calcFlow(frame1, frame2)/2
         flow2 = self.flow.calcFlow(frame2, frame1)/2
-        h, w = flow1.shape[:2]
         frame1Warped = cv2.remap(frame1, flow1,None, cv2.INTER_LINEAR)
         frame2Warped = cv2.remap(frame2, flow2,None, cv2.INTER_LINEAR)
-        f1w = frame1Warped
         frame1Warped = self.transform(frame1Warped)
         frame2Warped = self.transform(frame2Warped)  
         with no_grad():
             output = self.model(frame1Warped.to(self.device), frame2Warped.to(self.device))    
         newFrame = output.cpu().numpy()[0].transpose(1,2,0)*255
-        cv2.imwrite("newFrame.jpg", f1w)
+        cv2.imwrite("newFrame.jpg", output)
         newFrame = cv2.imread("newFrame.jpg")
         return newFrame
 
