@@ -96,10 +96,6 @@ class App(QWidget):
         flow1 = self.flow.calcFlow(frame1, frame2)/2
         flow2 = self.flow.calcFlow(frame2, frame1)/2
         h, w = flow1.shape[:2]
-        flow1[:,:,0] += np.arange(w)
-        flow1[:,:,1] += np.arange(h)[:,np.newaxis]
-        flow2[:,:,0] += np.arange(w)
-        flow2[:,:,1] += np.arange(h)[:,np.newaxis]
         frame1Warped = cv2.remap(frame1, flow1,None, cv2.INTER_LINEAR)
         frame2Warped = cv2.remap(frame2, flow2,None, cv2.INTER_LINEAR)
         f1w = frame1Warped
