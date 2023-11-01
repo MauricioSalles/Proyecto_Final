@@ -102,11 +102,13 @@ def calcFow(image1,image2):
     seg1,seg2 = segmentCluster(image1,image2)
     c,h,w = seg1.shape
     flow1 = np.zeros((h,w,2),dtype=np.float32)
+    flow2 = np.zeros((h,w,2),dtype=np.float32)
     for i in range(c):
         imageSegmented1, segmentsId1 = objetcSegmentation(seg1[i])
         imageSegmented2, segmentsId2 = objetcSegmentation(seg2[i])
         centers1 = segmentCenters(imageSegmented1,segmentsId1)
         centers2 = segmentCenters(imageSegmented2,segmentsId2)
         flow1 += calFlowSegment(imageSegmented1,segmentsId1,centers1,centers2)
-    return flow1
+        flow2 += calFlowSegment(imageSegmented2,segmentsId2,centers2,centers1)
+    return flow1,flow2
 

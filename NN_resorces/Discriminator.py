@@ -2,7 +2,6 @@ import torch.nn as nn
 from torch import cat
 
 class Discriminator(nn.Module):
-    """The quadratic model"""
     def __init__(self, in_channels):
         super(Discriminator, self).__init__()
         self.conv = nn.Sequential(
