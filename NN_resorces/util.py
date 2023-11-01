@@ -59,7 +59,6 @@ class CorrBlock:
         out = torch.cat(out_pyramid, dim=-1)
         return out.permute(0, 3, 1, 2).contiguous().float()
 
-    @staticmethod
     def corr(fmap1, fmap2):
         batch, dim, ht, wd = fmap1.shape
         fmap1 = fmap1.view(batch, dim, ht*wd)
