@@ -1,15 +1,10 @@
 import sys
 from torch import load,unsqueeze,cat, no_grad
-from process_video import process_video
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QPushButton, QLabel, QProgressBar
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import numpy as np
 import cv2
-from torch import load,unsqueeze,cat, no_grad
 from os.path import exists
 from NN_resorces.convNet import convNet
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog, QPushButton, QLabel, QProgressBar
-from PyQt5.QtGui import QIcon
 from NN_resorces.refine_flow import refine_flow
 import torchvision.transforms as transforms
 import torch.cuda as cuda   
@@ -65,19 +60,7 @@ class App(QWidget):
             name = file.split("/")
             self.label.setText(name[-1])
             print(files[0])
-    
-    def processVideo(self):
-        if self.videoDir == "":
-            print ("no hay direccion del video")
-            return
-        #self.process()
-        self.thread = QThread()
-        self.process_video = process_video(updateBar=self.updateBar, setMaximum=self.progressBar.setMaximum, video_dir=self.videoDir, name=self.textbox.text())
-        #self.process_video.process()
-        self.process_video.moveToThread(self.thread)
-        self.thread.started.connect(self.process_video.process)
-        self.thread.start()
-        print('finish')
+
     
     def updateBar(self,int):
         self.progressBar.setValue(int)
