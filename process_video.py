@@ -3,7 +3,7 @@ import cv2
 from torch import load,unsqueeze,cat, no_grad
 from os.path import exists
 from NN_resorces.convNet import convNet
-from NN_resorces.refine_flow import FlowModule
+from SegmentFlow import calcFow
 import torchvision.transforms as transforms
 import torch.cuda as cuda   
 import torch
@@ -19,7 +19,6 @@ class process_video(QObject):
         self.updateBar = updateBar  
         self.setMaximum = setMaximum
         self.device = "cuda" if cuda.is_available() else "cpu"
-        self.flow = FlowModule()
         self.model = convNet(channels=[32,64,128,256]).to(self.device)
         if(exists('./weights/convNet2e-5.pth')):
             self.model.load_state_dict(load('./weights/convNet2e-5.pth'))
@@ -57,7 +56,7 @@ class process_video(QObject):
         video.release()
         
     def generateFrame(self, frame1, frame2):
-        flow1,flow2 = self.flow.getFlow(frame1, frame2)
+        flow1,flow2 = calcFow(frame1, frame2)
         h, w = flow1.shape[:2]
         flow1[:,:,0] += np.arange(w)
         flow1[:,:,1] += np.arange(h)[:,np.newaxis]
