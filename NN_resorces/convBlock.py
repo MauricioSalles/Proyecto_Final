@@ -4,9 +4,8 @@ class ConvBlock(nn.Module):
     def __init__(self, in_channels, out_channels,batch_norm=False, activation='none',dropout=0.0):
         super(ConvBlock, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=7, padding=3),
-            nn.Conv2d(out_channels, out_channels, kernel_size=5, padding=2),
-            nn.LeakyReLU(0.2),
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1), 
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
         )
         self.dropout = None
         if dropout > 0:
@@ -31,3 +30,14 @@ class ConvBlock(nn.Module):
         if self.batch_norm:
             x = self.normalize(x)
         return x
+    
+class ConvBlock2(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(ConvBlock2, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=7, padding=3),
+            nn.Conv2d(out_channels, out_channels, kernel_size=5, padding=2),
+            nn.LeakyReLU(0.2),
+        )
+    def forward(self, x):
+        return self.conv(x)

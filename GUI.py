@@ -19,6 +19,7 @@ class App(QWidget):
         
     def main(self):
         self.device = "cuda" if cuda.is_available() else "cpu"
+        self.free = True
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.label = QLabel('video',self)
@@ -56,11 +57,19 @@ class App(QWidget):
         if self.videoDir == "":
             print ("no hay direccion del video")
             return
+        if self.textbox.text() == "":
+            print ("no hay direccion del video")
+            return
+        if not self.free:
+            print("proceso en ejecucion")
+            return
+        self.free = False
         self.thread = QThread()
         self.process_video = process_video(updateBar=self.updateBar, setMaximum=self.progressBar.setMaximum, video_dir=self.videoDir, name=self.textbox.text())
         self.process_video.moveToThread(self.thread)
         self.thread.started.connect(self.process_video.process)
         self.process_video.progress.connect(self.updateBar)
+        self.process_video.free.connect(self.freeProcess)
         self.process_video.finished.connect(self.thread.quit)
         self.process_video.finished.connect(self.process_video.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -70,6 +79,8 @@ class App(QWidget):
     def updateBar(self,int):
         self.progressBar.setValue(int)
 
+    def freeProcess(self):
+        self.free = True
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

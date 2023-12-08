@@ -34,6 +34,6 @@ def unsup_loss(pred_flows, wraped_imgs, frame):
         bce += weights[i] * photometric_loss(wraped_imgs[i], frame)
         smooth += weights[i] * smoothness_loss(pred_flows[i])
 
-    loss = bce + smooth
+    loss = bce*2 + smooth
     return loss
 

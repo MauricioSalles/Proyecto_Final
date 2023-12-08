@@ -61,9 +61,6 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
-            #loss.backward()
-            #optimizer.step()
-            #optimizer.zero_grad()
             step += 1
             running_loss += scalarLoss 
             if (step)%50==0:
@@ -85,8 +82,8 @@ def train(LR, EPOCHS,RUNID, model,currentStep):
 
 if __name__ == '__main__':
 
-    LR_LIST = [2e-4,2e-5]
-    EPOCH = [5,5]
+    LR_LIST = [2e-4]
+    EPOCH = [1]
     step = 0
     model = FlowNet().to("cuda" if cuda.is_available() else "cpu")
     RUNID = f'runs/FlowNetBC'
