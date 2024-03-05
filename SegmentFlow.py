@@ -56,7 +56,7 @@ def objetcSegmentation(image):
     iter = 1000
     id = 1
     image = image*10.0
-    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, (10,10), anchor=(-1, -1), iterations=2)
+    #image = cv2.morphologyEx(image, cv2.MORPH_OPEN, (10,10), anchor=(-1, -1), iterations=2)
     for i in range(iter):
         points = np.where(image == 2550.0)
         if len(points[0]) == 0:
